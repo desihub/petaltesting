@@ -13,7 +13,8 @@ import pickle
 import csv
 from scipy import interpolate
 import json
-
+import argparse
+import keyboard
 
 import gspread
 import pandas as pd
@@ -23,11 +24,22 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 plt.ion()
 
+parser = argparse.ArgumentParser()
+parser.add_arument("-w", "--wait", help="Determines amount of time between measuring temperature",action='store',dest='wait',default=None)
+results = parser.parse_args()
+
 class PlotPetalBoxTemps():
     def __init__(self):
         self.start_time = datetime.datetime.now()
         self.file_path = '/home/msdos/focalplane/pos_utility/'
         self.temp_log_path = os.getcwd()#'/home/msdos/test_util/'
+ 
+        self.wait = results.wait
+        if self.wait is None:
+            self.wait = 60
+
+        print("Temperature will be read every %d seconds"%self.wait)
+
         self.temp_log = open(self.temp_log_path+'/temp_log_%s.txt'%str(self.start_time),'w')
         self.hole_coords = np.genfromtxt(self.file_path+'hole_coords.csv', delimiter = ',', usecols = (3,4), skip_header = 40)
         self.nons = [38, 331, 438, 460, 478, 479, 480, 481, 497, 498, 499, 500, 513, 514, 515, 516, 527, 528, 529, 530, 531, 535, 536, 537, 538, 539, 540]
@@ -66,6 +78,7 @@ class PlotPetalBoxTemps():
         for t in temps:
             self.temp_log.write(str(t)+', ')
         self.temp_log.write('\n')
+
     def plot_hole_info(self):
         for i in range(len(self.hole_coords)):
             x = self.hole_coords[i][0]
@@ -103,8 +116,8 @@ class PlotPetalBoxTemps():
         pdf=df
         pdf=pdf.loc[pdf['PETAL_ID'] == int(self.petal)]
 
-        dev_list=pdf['DEVICE_ID'].tolist()
-        self.dev_list = [str(i).zfill(5) for i in dev_list]
+        dev_list=pdf['CAN_ID'].tolist()
+        self.dev_list = [str(i) for i in dev_list]
         self.hole_list=pdf['DEVICE_LOC'].tolist()
         self.dev_id_loc=dict(zip(self.dev_list,self.hole_list))
 
@@ -187,14 +200,14 @@ class PlotPetalBoxTemps():
     def __call__(self):
         self.get_temps()
         self.initial_plot()
-        time.sleep(60)
-        try:
-            while True:
-                self.get_temps()
-                self.updated_plot()
-                time.sleep(60)
-        except KeyboardInterrupt:
-            print('interrupted!')
+        time.sleep(self.wait)
+        while True:
+           try:
+               self.get_temps()
+               self.updated_plot()
+               time.sleep(self.wait)
+           except KeyboardInterrupt:
+               print('interrupted!')
 
 if __name__ == '__main__':
     P = PlotPetalBoxTemps()
