@@ -74,7 +74,7 @@ class Application(tk.Frame):
 
         self.canid_entry = tk.Entry(window, justify = 'right')
         self.canid_entry.grid(column=0, row=3)
-        self.canid_button = tk.Button(window, text = 'PETAL', command=lambda: self.set_canid())
+        self.canid_button = tk.Button(window, text = 'CAN ID', command=lambda: self.set_canid())
         self.canid_button.grid(column=1, row=3)
 
         self.fif_button = tk.Button(window, text = 'FIF ONLY', command=lambda: self.set_fif())
@@ -120,10 +120,10 @@ class Application(tk.Frame):
         if self.canid is None:
             deviceid = 'All'
         else:
-            deviceid = str(self.deviceid)
+            deviceid = str(self.canid)
 
         if self.fif_only == False:
-            msg = "Printing Device Information for devices on:\nPetal: %s\nCAN Bus: %s\nDevice Loc: %s\nDevice ID: %s"%(petal, canbus, deviceloc, deviceid)
+            msg = "Printing device information for devices with the following data:\nPetal: %s\nCAN Bus: %s\nDevice Loc: %s\nCAN ID: %s"%(petal, canbus, deviceloc, deviceid)
         else:
             msg = "Printing All FIFs for:\nPetal %s\nCAN Bus:%s"%(petal, canbus)
         #self.logdisp.insert(0, msg)
@@ -149,7 +149,7 @@ class Application(tk.Frame):
 
         if self.canid is not None:
             try:
-                this_data = this_data[this_data['CAN_ID'] == self.canid]
+                this_data = this_data[this_data['CAN_ID'] == int(self.canid)]
             except:
                 raise ValueError("This CanID cannot be found with the current selections")
         else:
