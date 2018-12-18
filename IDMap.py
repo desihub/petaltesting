@@ -21,6 +21,8 @@ import datetime
 import time
 import pickle
 import csv
+import glob
+pos_settings_path = ('/home/msdos/focalplane/fp_settings/pos_settings/')
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -41,7 +43,10 @@ class Application(tk.Frame):
         self.deviceloc = None
         self.canid = None
         self.fif_only = False
-    
+        self.bad_ids = None
+        self.pos_list = None
+        self.fif_list = None
+         
         self.createWidgets()
 
     def createWidgets(self):
@@ -85,6 +90,19 @@ class Application(tk.Frame):
 
         self.clear_info_button = tk.Button(window, text = 'CLEAR', command=lambda: self.clear_info())
         self.clear_info_button.grid(column=0,row=5)
+
+        self.bad_entry = tk.Entry(window, justify='right')
+        self.bad_entry.grid(column=0, row=6)
+        self.bad_button = tk.Button(window, text = 'DO NOT INCLUDE IN LIST', command=lambda: self.set_bad_ids())
+        self.bad_button.grid(column=1, row=6)
+
+        self.get_petallist_button = tk.Button(window, text = 'GET PETAL LIST', command=lambda: self.make_petal_list())
+        self.get_petallist_button.grid(column=0,row=7)
+
+        self.check_pos_button = tk.Button(window, text = 'CHECK POS FILES', command=lambda: self.check_pos_files())
+        self.check_pos_button.grid(column=1,row=7)
+
+
 
     def set_petal(self):
         self.petal = self.petal_entry.get()
@@ -175,6 +193,46 @@ class Application(tk.Frame):
         self.deviceloc = None
         self.canid = None
         self.fif_only = False
+
+    def set_bad_ids(self):
+        selected_bad_id = int(self.bad_entry.get())
+        if self.bad_ids is None:
+            self.bad_ids = []
+        self.bad_ids.append(selected_bad_id)
+        print("Device ID %d will not be included in your petal list" % int(selected_bad_id))
+
+    def make_petal_list(self):
+        this_data = self.map[self.map['PETAL_ID'] == float(self.petal)]
+        can_ids = this_data[this_data['DEVICE_TYPE'] == 'POS']['CAN_ID']
+        if self.bad_ids is not None:
+            for bad_id in self.bad_ids:
+                can_ids = np.delete(can_ids, np.argwhere(can_ids == bad_id))
+        print(len(can_ids))
+        self.pos_list = ['M'+str(e).zfill(5) for e in can_ids]
+        self.fif_list = this_data[(this_data['DEVICE_TYPE'] == 'FIF') | (this_data['DEVICE_TYPE'] == 'GIF')]['DEVICE_ID']
+
+        print(self.pos_list)
+        print(self.fif_list)
+        print('Number of positioners: %d\nNumber of fiducials: %d' % (len(self.pos_list), len(self.fif_list)))
+
+    def check_pos_files(self):
+        all_pos_files = glob.glob(pos_settings_path+'unit_M*.conf')
+        print(all_pos_files)
+        if self.pos_list is None:
+            print('Need to set the petal list')
+        else:
+            missing = []
+            for pos in self.pos_list:
+                name = pos_settings_path+'unit_%s.conf'%pos
+                if name not in all_pos_files:
+                    missing.append(name)
+            if len(missing) == 0:
+                print("All positioner .conf files are in %s" % pos_settings_path)
+            else:
+                print("Configuation files for the following devices is missing: ")
+                for m in missing:
+                    print('\n%s'%m)
+        
 
 if __name__=="__main__":
     root=tk.Tk()
