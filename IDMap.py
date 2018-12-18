@@ -3,6 +3,7 @@ matplotlib.use('TkAgg')
 import numpy as np
 import matplotlib.pyplot as plt
 import tkinter as tk
+from tkinter import *
 from tkinter.ttk import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
@@ -23,7 +24,7 @@ import csv
 
 class Application(tk.Frame):
     def __init__(self, master=None):
-        tk.Frame.__init__(self,master, bg = 'white')
+        tk.Frame.__init__(self, master, bg = 'white')
 
         #data frame initialization
         self.url = 'https://docs.google.com/spreadsheets/d/1lJ9GjhUUsK2SIvXeerpGW7664OFKQWAlPqpgxgevvl8/edit#gid=0'
@@ -40,43 +41,50 @@ class Application(tk.Frame):
         self.deviceloc = None
         self.canid = None
         self.fif_only = False
+    
+        self.createWidgets()
 
     def createWidgets(self):
         window = tk.Frame(root, bg = 'white')
         window.pack(side='top', fill='both')
 
-        logarea = tk.Frame(root, bg = 'white')
-        logarea.pack(side='bottom', fill='both')
-        scrollbar = tk.Scrollbar(logarea)
-        scrollbar.pack(side='right', fill='y')
+        #logarea = tk.Frame(root, bg = 'white')
+        #logarea.pack(side='bottom', fill='both')
+        #scrollbar = tk.Scrollbar(logarea)
+        #scrollbar.pack(side='right', fill='y')
 
-        self.logdisp = tk.Listbox(logarea,  yscrollcommand=scrollbar.set, height = 8, background='white')
-        self.logdisp.pack(fill = 'both')
-        scrollbar.configure(command = self.logdisp.yview)
+        #self.logdisp = tk.Listbox(logarea,  yscrollcommand=scrollbar.set, height = 8, background='white')
+        #self.logdisp.pack(fill = 'both')
+        #scrollbar.configure(command = self.logdisp.yview)
 
         self.petal_entry = tk.Entry(window, justify = 'right')
         self.petal_entry.grid(column=0, row=0)
-        self.petal_button = tk.Button(window, text = 'PETAL', command=lambda: self.set_petal()).pack()
+        self.petal_button = tk.Button(window, text = 'PETAL', command=lambda: self.set_petal())
         self.petal_button.grid(column=1, row=0)
 
         self.canbus_entry = tk.Entry(window, justify = 'right')
         self.canbus_entry.grid(column=0, row=1)
-        self.canbus_button = tk.Button(window, text = 'CAN BUS (as #)', command=lambda: self.set_canbus()).pack()
+        self.canbus_button = tk.Button(window, text = 'CAN BUS (as #)', command=lambda: self.set_canbus())
         self.canbus_button.grid(column=1, row=1)
 
         self.loc_entry = tk.Entry(window, justify = 'right')
         self.loc_entry.grid(column=0, row=2)
-        self.loc_button = tk.Button(window, text = 'DEVICE LOC', command=lambda: self.set_deviceloc()).pack()
+        self.loc_button = tk.Button(window, text = 'DEVICE LOC', command=lambda: self.set_deviceloc())
         self.loc_button.grid(column=1, row=2)
 
         self.canid_entry = tk.Entry(window, justify = 'right')
         self.canid_entry.grid(column=0, row=3)
-        self.canid_button = tk.Button(window, text = 'PETAL', command=lambda: self.set_canid()).pack()
+        self.canid_button = tk.Button(window, text = 'PETAL', command=lambda: self.set_canid())
         self.canid_button.grid(column=1, row=3)
 
-        self.fif_button = tk.Button(window, text = 'FIF ONLY', command=lambda: self.set_fif()).pack()
+        self.fif_button = tk.Button(window, text = 'FIF ONLY', command=lambda: self.set_fif())
+        self.fif_button.grid(column=0,row=4)
 
-        self.get_info_button = tk.Button(window, text = 'GET INFO', command=lambda: self.get_info()).pack()
+        self.get_info_button = tk.Button(window, text = 'GET INFO', command=lambda: self.get_info())
+        self.get_info_button.grid(column=1,row=4)
+
+        self.clear_info_button = tk.Button(window, text = 'CLEAR', command=lambda: self.clear_info())
+        self.clear_info_button.grid(column=0,row=5)
 
     def set_petal(self):
         self.petal = self.petal_entry.get()
@@ -94,44 +102,46 @@ class Application(tk.Frame):
         self.fif_only = True
 
     def get_info(self):
-        if self.petal == None:
+
+        if self.petal is None:
             petal = 'All'
         else:
-            petal = int(self.petal)
-        if self.canbus == None:
+            petal = str(self.petal)
+        if self.canbus is None:
             canbus = 'All'
         else:
-            canbus = int(self.canbus)
+            canbus = str(self.canbus)
 
-        if self.deviceloc == None:
+        if self.deviceloc is None:
             deviceloc = 'All'
         else:
-            deviceloc = int(self.deviceloc)
+            deviceloc = str(self.deviceloc)
 
-        if self.deviceid == None:
+        if self.canid is None:
             deviceid = 'All'
         else:
-            deviceid = int(self.deviceid)
+            deviceid = str(self.deviceid)
 
         if self.fif_only == False:
-            msg = "Printing Device Information for devices on:\n Petal: %s\n CAN Bus: %d\nDevice Loc: %d\nDevice ID: %d"%(petal, canbus, deviceloc, deviceid)
+            msg = "Printing Device Information for devices on:\nPetal: %s\nCAN Bus: %s\nDevice Loc: %s\nDevice ID: %s"%(petal, canbus, deviceloc, deviceid)
         else:
-            msg = "Printing All FIFs for:\n Petal %d\nCAN Bus:%d"%(petal, canbus)
-        self.logdisp.insert(0, msg)
+            msg = "Printing All FIFs for:\nPetal %s\nCAN Bus:%s"%(petal, canbus)
+        #self.logdisp.insert(0, msg)
+        print(msg)
 
         if self.petal is not None:
-            this_data = self.map[self.map['PETAL_ID'] == self.petal]
+            this_data = self.map[self.map['PETAL_ID'] == float(self.petal)]
         else:
             this_data = self.map
 
         if self.canbus is not None:
-            this_data = this_data[this_data['BUS_ID'] == self.canbus]
+            this_data = this_data[this_data['BUS_ID'] == float(self.canbus)]
         else:
             pass
 
         if self.deviceloc is not None:
             try:
-                this_data = this_data[this_data['DEVICE_LOC'] == self.deviceloc]
+                this_data = this_data[this_data['DEVICE_LOC'] == float(self.deviceloc)]
             except:
                 raise ValueError("This device location doesn't exist on this Petal/CAN Bus")
         else:
@@ -139,7 +149,7 @@ class Application(tk.Frame):
 
         if self.canid is not None:
             try:
-                this_data = this_data[this_data['DEVICE_ID'] == self.canid]
+                this_data = this_data[this_data['CAN_ID'] == self.canid]
             except:
                 raise ValueError("This CanID cannot be found with the current selections")
         else:
@@ -153,9 +163,18 @@ class Application(tk.Frame):
         else:
             pass
 
-        self.logdisp.insert(0,this_data.dtype.names)
-        for info in this_data:
-            self.logdisp.insert(0,info)
+        #self.logdisp.insert(0,this_data.dtype.names)
+        df = pd.DataFrame(this_data)
+        print(df.to_string())
+        #for info in this_data:
+        #    self.logdisp.insert(0,info)
+
+    def clear_info(self):
+        self.petal = None
+        self.canbus = None
+        self.deviceloc = None
+        self.canid = None
+        self.fif_only = False
 
 if __name__=="__main__":
     root=tk.Tk()
@@ -165,6 +184,6 @@ if __name__=="__main__":
 
 
 
-        
+      
 
 
