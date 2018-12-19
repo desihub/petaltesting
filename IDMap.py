@@ -11,9 +11,6 @@ from tkinter import messagebox
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import sys,os
-sys.path.append('/home/msdos/focalplane/plate_control/trunk/petal')
-import petalcomm
-import petal
 from gspread_dataframe import get_as_dataframe
 import pandas as pd
 from numpy import genfromtxt
@@ -22,6 +19,7 @@ import time
 import pickle
 import csv
 import glob
+from configobj import ConfigObj
 pos_settings_path = ('/home/msdos/focalplane/fp_settings/pos_settings/')
 
 class Application(tk.Frame):
@@ -102,6 +100,8 @@ class Application(tk.Frame):
         self.check_pos_button = tk.Button(window, text = 'CHECK POS FILES', command=lambda: self.check_pos_files())
         self.check_pos_button.grid(column=1,row=7)
 
+        self.write_pos_button = tk.Button(window, text = 'WRITE BUS IN POS FILES', command=lambda: self.write_pos_files())
+        self.write_pos_button.grid(column=0,row=8)
 
 
     def set_petal(self):
@@ -207,23 +207,20 @@ class Application(tk.Frame):
         if self.bad_ids is not None:
             for bad_id in self.bad_ids:
                 can_ids = np.delete(can_ids, np.argwhere(can_ids == bad_id))
-        print(len(can_ids))
-        self.pos_list = ['M'+str(e).zfill(5) for e in can_ids]
-        self.fif_list = this_data[(this_data['DEVICE_TYPE'] == 'FIF') | (this_data['DEVICE_TYPE'] == 'GIF')]['DEVICE_ID']
-
+        self.pos_list = ['M'+str(can).zfill(5) for can in can_ids]
+        self.fif_list = this_data[(this_data['DEVICE_TYPE'] == 'FIF')|(this_data['DEVICE_TYPE'] == 'GIF')]['DEVICE_ID']
         print(self.pos_list)
         print(self.fif_list)
         print('Number of positioners: %d\nNumber of fiducials: %d' % (len(self.pos_list), len(self.fif_list)))
 
     def check_pos_files(self):
         all_pos_files = glob.glob(pos_settings_path+'unit_M*.conf')
-        print(all_pos_files)
         if self.pos_list is None:
             print('Need to set the petal list')
         else:
             missing = []
             for pos in self.pos_list:
-                name = pos_settings_path+'unit_%s.conf'%pos
+                name = pos_settings_path+'unit_%s.conf'%(pos)
                 if name not in all_pos_files:
                     missing.append(name)
             if len(missing) == 0:
@@ -232,7 +229,22 @@ class Application(tk.Frame):
                 print("Configuation files for the following devices is missing: ")
                 for m in missing:
                     print('\n%s'%m)
-        
+
+    def write_pos_files(self):
+        if self.pos_list is None:
+            print('Need to set the petal list')
+        else:
+            for pos in self.pos_list:
+                try:
+                    name = pos_settings_path+'unit_%s.conf'%pos
+                    canid = self.map[self.map['CAN_ID'] == int(pos[1:])]['BUS_ID']
+                    busid = 'can'+str(int(canid))
+                    config = ConfigObj(name,unrepr=True,encoding='utf-8')
+                    config['BUS_ID'] = str(busid)
+                    config.write()
+                except:
+                    print("Something went wrong with device %d"%int(pos[1:]))
+            print("Done writing conf files")        
 
 if __name__=="__main__":
     root=tk.Tk()
