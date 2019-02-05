@@ -14,7 +14,6 @@ import csv
 from scipy import interpolate
 import json
 import argparse
-import keyboard
 
 import gspread
 import pandas as pd
@@ -25,16 +24,18 @@ from oauth2client.service_account import ServiceAccountCredentials
 plt.ion()
 
 parser = argparse.ArgumentParser()
-parser.add_arument("-w", "--wait", help="Determines amount of time between measuring temperature",action='store',dest='wait',default=None)
+parser.add_argument("-w", "--wait", help="Determines amount of time between measuring temperature",action='store',dest='wait',default=None)
+parser.add_argument('petal',type=int,help="Petal Number")
+parser.add_argument('pc',type=int,help="Petal Controller Number")
 results = parser.parse_args()
 
 class PlotPetalBoxTemps():
     def __init__(self):
         self.start_time = datetime.datetime.now()
         self.file_path = '/home/msdos/focalplane/pos_utility/'
-        self.temp_log_path = os.getcwd()#'/home/msdos/test_util/'
+        self.temp_log_path = os.getcwd()#'/home/msdos/test_util/temp_logs/'
  
-        self.wait = results.wait
+        self.wait = int(results.wait)
         if self.wait is None:
             self.wait = 60
 
@@ -46,8 +47,8 @@ class PlotPetalBoxTemps():
         self.gifs = [541, 542]
         self.fifs = [11, 75, 150, 239, 321, 439, 482, 496, 517, 534]
         try:
-            self.petal = sys.argv[1].zfill(2)
-            self.comm = petalcomm.PetalComm(int(sys.argv[2]))
+            self.petal = str(results.petal).zfill(2)
+            self.comm = petalcomm.PetalComm(int(str(results.pc)))
         except:
             print('Must be run with two arguments: petal # and petalbox #')
             sys.exit()
@@ -116,8 +117,8 @@ class PlotPetalBoxTemps():
         pdf=df
         pdf=pdf.loc[pdf['PETAL_ID'] == int(self.petal)]
 
-        dev_list=pdf['CAN_ID'].tolist()
-        self.dev_list = [str(i) for i in dev_list]
+        self.dev_list=pdf['CAN_ID'].tolist()
+        #self.dev_list = [str(i) for i in dev_list]
         self.hole_list=pdf['DEVICE_LOC'].tolist()
         self.dev_id_loc=dict(zip(self.dev_list,self.hole_list))
 
@@ -125,7 +126,7 @@ class PlotPetalBoxTemps():
         idx = []
         for i,e in enumerate(self.ids):
             try:
-                holes.append(self.dev_id_loc[str(e).zfill(5)])
+                holes.append(self.dev_id_loc[e])
                 idx.append(i)
             except:
                 print('failed: ',e)
@@ -163,7 +164,7 @@ class PlotPetalBoxTemps():
         idx = []
         for i,e in enumerate(self.ids):
             try:
-                holes.append(self.dev_id_loc[str(e).zfill(5)])
+                holes.append(self.dev_id_loc[e])
                 idx.append(i)
             except:
                 print('failed: ',e)

@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import *
 from tkinter.ttk import *
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 from tkinter import messagebox
 import gspread
@@ -102,6 +101,9 @@ class Application(tk.Frame):
 
         self.write_pos_button = tk.Button(window, text = 'WRITE BUS IN POS FILES', command=lambda: self.write_pos_files())
         self.write_pos_button.grid(column=0,row=8)
+
+        self.get_random_button = tk.Button(window, text = 'GET RANDOM LIST OF POS', command=lambda: self.get_random())
+        self.get_random_button.grid(column=1,row=8)
 
 
     def set_petal(self):
@@ -237,14 +239,26 @@ class Application(tk.Frame):
             for pos in self.pos_list:
                 try:
                     name = pos_settings_path+'unit_%s.conf'%pos
-                    canid = self.map[self.map['CAN_ID'] == int(pos[1:])]['BUS_ID']
+                    line = self.map[self.map['CAN_ID'] == int(pos[1:])]
+                    canid = line['BUS_ID']
                     busid = 'can'+str(int(canid))
                     config = ConfigObj(name,unrepr=True,encoding='utf-8')
                     config['BUS_ID'] = str(busid)
+                    config['DEVICE_ID'] = int(line['DEVICE_LOC'])
+                    config['PETAL_ID'] = int(line['PETAL_ID'])
                     config.write()
                 except:
                     print("Something went wrong with device %d"%int(pos[1:]))
             print("Done writing conf files")        
+
+    def get_random(self):
+        if self.petal is None:
+            print('Select a Petal')
+        else:
+            this_data = self.map[self.map['PETAL_ID'] == float(self.petal)]
+
+            for bus in np.unique(this_data['BUS_ID']):
+                print('can'+str(int(bus)), np.random.choice(this_data[this_data['BUS_ID'] == bus], 1))
 
 if __name__=="__main__":
     root=tk.Tk()
