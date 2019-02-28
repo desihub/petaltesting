@@ -209,7 +209,7 @@ class Application(tk.Frame):
         if self.bad_ids is not None:
             for bad_id in self.bad_ids:
                 can_ids = np.delete(can_ids, np.argwhere(can_ids == bad_id))
-        self.pos_list = ['M'+str(can).zfill(5) for can in can_ids]
+        self.pos_list = ['M'+str(int(can)).zfill(5) for can in can_ids]
         self.fif_list = this_data[(this_data['DEVICE_TYPE'] == 'FIF')|(this_data['DEVICE_TYPE'] == 'GIF')]['DEVICE_ID']
         print(self.pos_list)
         print(self.fif_list)
