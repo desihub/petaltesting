@@ -213,7 +213,11 @@ class FVCApp(tk.Frame):
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
 
         else:
-            c=next(self.plot_color)
+            try:
+                c=next(self.plot_color)
+            except:
+                self.plot_color=iter(cm.rainbow(np.linspace(0,1,10)))
+                c = next(self.plot_color)
             if self.plot_var.get() == 1:
                 for num, info in self.loc.items():
                     self.ax.plot(info['x'], info['y'],'x',c=c)
