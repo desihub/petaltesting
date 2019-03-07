@@ -14,7 +14,7 @@ import csv
 from scipy import interpolate
 import json
 import argparse
-
+import pickle as pk
 import gspread
 import pandas as pd
 from gspread_dataframe import get_as_dataframe
@@ -75,9 +75,14 @@ class PlotPetalBoxTemps():
             temps=temps+_temps
         self.ids = ids
         self.temps=temps
+        output={}
+        for i in range(len(ids)):
+            output[ids[i]]=temps[i]
+        file_output='data/thermal_test_result_'+datetime.datetime.now()+'.json'
+        with open(file_output, 'w') as f:
+            json.dump(output, f)
         self.temp_log.write(str(measure_time)+'\n')
-        for t in temps:
-            self.temp_log.write(str(t)+', ')
+        self.temp_log.write(str(output))
         self.temp_log.write('\n')
 
     def plot_hole_info(self):
@@ -198,13 +203,31 @@ class PlotPetalBoxTemps():
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
+    def move(self):
+        mode='cruise'
+        direction_theta='cw'
+        direction_phi='cw'
+        degree=27
+        canlist=['can10','can11','can12','can13','can14','can15','can16','can17','can22','can23']
+        self.comm.pbset('STOP_MODE','off')
+        for can in canlist:
+            self.comm.move(can, 20000, direction_theta, mode, 'theta', degree)
+        time.sleep(10) 
+        for can in canlist:
+            self.comm.move(can, 20000, direction_phi, mode, 'phi', degree)  
+        time.sleep(10)
+        self.get_temps()
+        self.comm.pbset('STOP_MODE','on')
+
     def __call__(self):
         self.get_temps()
+        self.move()
         self.initial_plot()
         time.sleep(self.wait)
         while True:
            try:
                self.get_temps()
+               self.move()
                self.updated_plot()
                time.sleep(self.wait)
            except KeyboardInterrupt:
